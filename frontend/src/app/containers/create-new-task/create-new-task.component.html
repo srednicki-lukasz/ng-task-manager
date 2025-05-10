@@ -1,0 +1,28 @@
+@if (isLoading()) {
+<div class="mat-spinner-container">
+  <mat-spinner></mat-spinner>
+</div>
+} @else {
+<form [formGroup]="formGroup" (ngSubmit)="save()">
+  <mat-form-field>
+    <mat-label>Task title</mat-label>
+    <input matInput formControlName="taskTitle" />
+    @if (formGroup.get('taskTitle')?.hasError('required')) {
+    <mat-error>Task title is required</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Task description</mat-label>
+    <textarea matInput formControlName="taskDescription"></textarea>
+    @if (formGroup.get('taskDescription')?.hasError('required')) {
+    <mat-error>Task description is required</mat-error>
+    }
+  </mat-form-field>
+
+  <div class="mat-buttons-container">
+    <button mat-button (click)="reset($event)">Reset</button>
+    <button mat-button [disabled]="formGroup.invalid">Save</button>
+  </div>
+</form>
+}

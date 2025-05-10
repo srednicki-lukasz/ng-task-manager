@@ -1,0 +1,38 @@
+<mat-toolbar>
+  <span>ng-task-manager</span>
+
+  <span class="example-spacer"></span>
+
+  <button
+    mat-icon-button
+    class="example-icon favorite-icon"
+    routerLink="/create-new-task"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{ exact: true }"
+    aria-label="Icon button with plus icon"
+  >
+    <mat-icon>add</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    class="example-icon favorite-icon"
+    routerLink="/"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{ exact: true }"
+    aria-label="Icon button with numbered list icon"
+  >
+    <mat-icon>format_list_numbered</mat-icon>
+  </button>
+
+  <button
+    mat-icon-button
+    class="example-icon"
+    routerLink="/archived-tasks"
+    routerLinkActive="active"
+    [routerLinkActiveOptions]="{ exact: true }"
+    aria-label="Icon button with checked icon"
+  >
+    <mat-icon>done_all</mat-icon>
+  </button>
+</mat-toolbar>

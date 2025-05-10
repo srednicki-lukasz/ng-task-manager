@@ -1,0 +1,12 @@
+:host {
+  height: 100%;
+  display: block;
+}
+
+.mat-spinner-container,
+.placeholder-container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

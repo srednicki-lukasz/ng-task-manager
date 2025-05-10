@@ -1,0 +1,24 @@
+@if (isLoading()) {
+<div class="mat-spinner-container">
+  <mat-spinner></mat-spinner>
+</div>
+} @else { @if (!completedTasks().length) {
+<div class="placeholder-container">Nothing to see here</div>
+} @else {
+<mat-accordion>
+  @for (task of completedTasks(); track $index) {
+  <mat-expansion-panel [expanded]="$index === 0">
+    <mat-expansion-panel-header>
+      <mat-panel-title>{{ task.title }}</mat-panel-title>
+    </mat-expansion-panel-header>
+
+    <p>{{ task.description }}</p>
+
+    <mat-action-row>
+      <button mat-button (click)="activateTask(task)">Activate</button>
+      <button mat-button (click)="deleteTask(task._id!)">Delete</button>
+    </mat-action-row>
+  </mat-expansion-panel>
+  }
+</mat-accordion>
+} }
