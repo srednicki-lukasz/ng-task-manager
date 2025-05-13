@@ -9,6 +9,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, RouterLinkActive, MatToolbarModule, MatButtonModule, MatIconModule],
+  imports: [MatToolbarModule, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule],
 })
 export class HeaderComponent {}

@@ -1,38 +1,63 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
-import { MatExpansionModule } from '@angular/material/expansion';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TaskCardComponent } from '../../components/task-card/task-card.component';
 import { Task } from '../../models/tasks.models';
+import { SnackBarService } from '../../services/snack-bar.service';
 import { TaskManagerStore } from '../../store/task-manager.store';
+
+const DEFAULT_ACTIONS = ['Edit', 'Complete', 'Delete'];
+const DURING_EDIT_ACTIONS = ['Cancel', 'Save'];
 
 @Component({
   selector: 'tm-active-tasks',
   templateUrl: './active-tasks.component.html',
   styleUrl: './active-tasks.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    FormsModule,
-    ReactiveFormsModule,
-    MatProgressSpinnerModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatExpansionModule,
-    MatButtonModule,
-  ],
+  imports: [MatProgressSpinnerModule, FormsModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, TaskCardComponent],
 })
-export class ActiveTasksComponent implements OnInit {
+export class ActiveTasksComponent {
   private readonly store = inject(TaskManagerStore);
+  private readonly snackBarService = inject(SnackBarService);
 
-  readonly formGroup = new FormGroup({
-    taskDescription: new FormControl('', [Validators.required]),
-  });
+  readonly searchFormGroup = new FormGroup({ title: new FormControl('') });
+  readonly editFormGroup = new FormGroup({ description: new FormControl('') });
 
-  isEditing = signal(false);
+  actions = signal<string[]>(DEFAULT_ACTIONS);
+  editingTaskId = signal<string | null>(null);
+
   isLoading = computed(this.computeIsLoading.bind(this));
   activeTasks = computed(this.computeActiveTasks.bind(this));
+
+  constructor() {
+    this.store.fetchTasks();
+    this.searchFormGroup.controls['title'].valueChanges.pipe(takeUntilDestroyed()).subscribe(title => this.store.searchTasks({ title: title ?? '' }));
+  }
+
+  public onAction(action: string, task: Task): void {
+    switch (action) {
+      case 'Edit':
+        return this.editTask(task);
+
+      case 'Complete':
+        return this.completeTask(task);
+
+      case 'Delete':
+        return this.deleteTask(task);
+
+      case 'Save':
+        return this.save(task);
+
+      case 'Cancel':
+        return this.cancel();
+
+      default:
+        break;
+    }
+  }
 
   private computeIsLoading(store = this.store): boolean {
     return store.isLoading();
@@ -42,30 +67,41 @@ export class ActiveTasksComponent implements OnInit {
     return store.activeTasks();
   }
 
-  public ngOnInit(): void {
-    this.store.fetchTasks('active');
+  private editTask(task: Task): void {
+    this.editingTaskId.set(task._id!);
+    this.actions.set(DURING_EDIT_ACTIONS);
+    this.editFormGroup.setValue({ description: task.description });
   }
 
-  public completeTask(task: Task): void {
-    this.store.updateTask({ ...task, status: 'completed' });
+  private completeTask(task: Task): void {
+    this.store.updateTask({
+      resource: { ...task, status: 'completed' },
+      afterSuccessFn: () => this.snackBarService.open('Task completed'),
+    });
   }
 
-  public deleteTask(id: string): void {
-    this.store.deleteTask(id);
+  private deleteTask(task: Task): void {
+    this.store.deleteTask({
+      resource: task,
+      afterSuccessFn: () => this.snackBarService.open('Task deleted'),
+    });
   }
 
-  public editTask(task: Task): void {
-    this.isEditing.set(true);
-    this.formGroup.setValue({ taskDescription: task.description });
+  private save(task: Task): void {
+    const newDescription = this.editFormGroup.value.description!;
+
+    if (task.description !== newDescription) {
+      this.store.updateTask({
+        resource: { ...task, description: newDescription },
+        afterSuccessFn: () => this.snackBarService.open('Task updated'),
+      });
+    }
+
+    this.cancel();
   }
 
-  public cancel(): void {
-    this.isEditing.set(false);
-  }
-
-  public save(task: Task): void {
-    const newDescription = this.formGroup.value.taskDescription!;
-    if (task.description !== newDescription) this.store.updateTask({ ...task, description: newDescription });
-    this.isEditing.set(false);
+  private cancel(): void {
+    this.editingTaskId.set(null);
+    this.actions.set(DEFAULT_ACTIONS);
   }
 }

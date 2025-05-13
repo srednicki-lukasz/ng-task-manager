@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { SnackBarService } from '../../services/snack-bar.service';
 import { TaskManagerStore } from '../../store/task-manager.store';
 
 @Component({
@@ -11,39 +12,34 @@ import { TaskManagerStore } from '../../store/task-manager.store';
   templateUrl: './create-new-task.component.html',
   styleUrl: './create-new-task.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    FormsModule,
-    ReactiveFormsModule,
-    MatProgressSpinnerModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-  ],
+  imports: [MatProgressSpinnerModule, FormsModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule],
 })
 export class CreateNewTaskComponent {
   private readonly store = inject(TaskManagerStore);
+  private readonly snackBarService = inject(SnackBarService);
 
-  readonly formGroup = new FormGroup({
-    taskTitle: new FormControl('', [Validators.required]),
-    taskDescription: new FormControl('', [Validators.required]),
+  readonly createTaskFormGroup = new FormGroup({
+    title: new FormControl('', [Validators.required]),
+    description: new FormControl(''),
   });
 
-  isLoading = computed(this.computeIsLoading.bind(this));
-
-  private computeIsLoading(store = this.store): boolean {
-    return store.isLoading();
-  }
+  isCreating = signal(false);
 
   public reset(event: Event): void {
     event.preventDefault();
-    this.formGroup.reset();
+    this.createTaskFormGroup.reset();
   }
 
   public save(): void {
+    this.isCreating.set(true);
+
     this.store.createTask({
-      title: this.formGroup.value.taskTitle!,
-      description: this.formGroup.value.taskDescription!,
-      status: 'active',
+      resource: {
+        title: this.createTaskFormGroup.value.title!,
+        description: this.createTaskFormGroup.value.description!,
+        status: 'active',
+      },
+      afterSuccessFn: () => this.snackBarService.open('Task created'),
     });
   }
 }

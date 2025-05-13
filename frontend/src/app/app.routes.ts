@@ -9,13 +9,11 @@ export const routes: Routes = [
   },
   {
     path: 'archived-tasks',
-    loadComponent: () =>
-      import('./containers/archived-tasks/archived-tasks.component').then(m => m.ArchivedTasksComponent),
+    loadComponent: () => import('./containers/archived-tasks/archived-tasks.component').then(m => m.ArchivedTasksComponent),
   },
   {
     path: 'create-new-task',
-    loadComponent: () =>
-      import('./containers/create-new-task/create-new-task.component').then(m => m.CreateNewTaskComponent),
+    loadComponent: () => import('./containers/create-new-task/create-new-task.component').then(m => m.CreateNewTaskComponent),
   },
   {
     path: '**',

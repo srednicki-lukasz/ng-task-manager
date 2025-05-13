@@ -1,0 +1,16 @@
+<mat-card appearance="outlined" style="margin: 8px 0">
+  <mat-card-header>
+    <mat-card-title>{{ task().title }}</mat-card-title>
+    <mat-card-subtitle>{{ task()._id }}</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <ng-content></ng-content>
+  </mat-card-content>
+
+  <mat-card-actions align="end">
+    @for (action of actions(); track $index) {
+      <button mat-button [disableRipple]="true" (click)="onAction.emit(action)">{{ action }}</button>
+    }
+  </mat-card-actions>
+</mat-card>

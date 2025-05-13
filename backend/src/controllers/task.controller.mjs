@@ -7,14 +7,18 @@ import Task from '../models/task.model.mjs';
 export const getTasks = async (req, res) => {
   try {
     const filter = {};
-    const taskStatus = req.query.status;
+    const { status, title } = req.query;
 
-    if (taskStatus) {
-      if (!['active', 'completed'].includes(taskStatus)) {
+    if (status) {
+      if (!['active', 'completed'].includes(status)) {
         return res.status(400).json('Incorrect task status.');
       }
 
-      filter.status = taskStatus;
+      filter.status = status;
+    }
+
+    if (title) {
+      filter.title = { $regex: title, $options: 'i' };
     }
 
     const tasks = await Task.find(filter);

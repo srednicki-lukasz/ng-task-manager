@@ -1,7 +1,6 @@
 :host {
   height: 100%;
   display: flex;
-  align-items: flex-start;
   flex-direction: column;
 }
 
@@ -19,6 +18,7 @@ form {
 
   mat-form-field {
     width: 100%;
+    margin-bottom: 8px;
   }
 
   .mat-buttons-container {

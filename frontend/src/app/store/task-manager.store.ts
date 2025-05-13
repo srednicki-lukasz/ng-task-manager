@@ -1,7 +1,10 @@
 import { computed, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
-import { Task } from '../models/tasks.models';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { debounceTime, distinctUntilChanged, pipe, switchMap, tap } from 'rxjs';
+import { Task, TaskQueryParams } from '../models/tasks.models';
 import { TaskManagerHttpService } from './task-manager-http.service';
 
 type TaskManagerState = {
@@ -10,7 +13,7 @@ type TaskManagerState = {
 };
 
 const initialState: TaskManagerState = {
-  isLoading: false,
+  isLoading: true,
   tasks: [],
 };
 
@@ -22,36 +25,70 @@ export const TaskManagerStore = signalStore(
     completedTasks: computed(() => tasks().filter(({ status }) => status === 'completed')),
   })),
   withMethods((store, router = inject(Router), taskManagerHttpService = inject(TaskManagerHttpService)) => ({
-    async fetchTasks(status?: 'active' | 'completed') {
+    async fetchTasks() {
+      if (store.tasks().length) return;
       patchState(store, { isLoading: true });
 
-      const tasks = await taskManagerHttpService.fetchTasks(status);
+      const tasks = await taskManagerHttpService.fetchTasks();
+
       patchState(store, { isLoading: false, tasks });
     },
 
-    async createTask(task: Task) {
+    searchTasks: rxMethod<TaskQueryParams>(
+      pipe(
+        debounceTime(200),
+        distinctUntilChanged(),
+        tap(() => patchState(store, { isLoading: true })),
+        switchMap(params =>
+          taskManagerHttpService.searchTasks(params).pipe(
+            tapResponse({
+              next: (tasks: Task[]) => patchState(store, { tasks, isLoading: false }),
+              error: err => {
+                patchState(store, { isLoading: false });
+                console.error(err);
+              },
+            })
+          )
+        )
+      )
+    ),
+
+    async createTask({ resource, afterSuccessFn }: { resource: Task; afterSuccessFn?: () => void }) {
       patchState(store, { isLoading: true });
 
-      const newTask = await taskManagerHttpService.createTask(task);
-      patchState(store, { isLoading: false, tasks: [...store.tasks(), newTask] });
+      const created = await taskManagerHttpService.createTask(resource);
+
+      patchState(store, {
+        isLoading: false,
+        tasks: [...store.tasks(), created],
+      });
 
       void router.navigateByUrl('/');
+      afterSuccessFn?.();
     },
 
-    async updateTask(task: Task) {
+    async updateTask({ resource, afterSuccessFn }: { resource: Task; afterSuccessFn?: () => void }) {
       patchState(store, { isLoading: true });
 
-      const updatedTask = await taskManagerHttpService.updateTask(task);
-      const mappedTasks = store.tasks().map(task => (task._id === updatedTask._id ? updatedTask : task));
-      patchState(store, { isLoading: false, tasks: mappedTasks });
+      const updated = await taskManagerHttpService.updateTask(resource);
+
+      patchState(store, {
+        isLoading: false,
+        tasks: store.tasks().map(task => (task._id === updated._id ? updated : task)),
+      });
+      afterSuccessFn?.();
     },
 
-    async deleteTask(id: string) {
+    async deleteTask({ resource, afterSuccessFn }: { resource: Task; afterSuccessFn?: () => void }) {
       patchState(store, { isLoading: true });
 
-      const deletedTask = await taskManagerHttpService.deleteTask(id);
-      const filteredTasks = store.tasks().filter(task => task._id !== deletedTask._id);
-      patchState(store, { isLoading: false, tasks: filteredTasks });
+      const deleted = await taskManagerHttpService.deleteTask(resource);
+
+      patchState(store, {
+        isLoading: false,
+        tasks: store.tasks().filter(task => task._id !== deleted._id),
+      });
+      afterSuccessFn?.();
     },
   }))
 );

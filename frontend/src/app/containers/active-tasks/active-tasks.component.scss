@@ -1,16 +1,15 @@
 :host {
   height: 100%;
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
-.mat-spinner-container,
-.placeholder-container {
+.mat-spinner-container {
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
 
 form {
   width: 100%;
@@ -18,4 +17,9 @@ form {
   mat-form-field {
     width: 100%;
   }
+}
+
+.tasks-list {
+  flex: 1;
+  overflow: auto;
 }
